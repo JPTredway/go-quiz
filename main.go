@@ -10,23 +10,44 @@ import (
 )
 
 func main() {
-	csvFilename := flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
-	timeLimit := flag.Int("limit", 30, "the time limit for the quiz in seconds")
-	flag.Parse()
+	timer, problems := setupQuiz()
+	runQuiz(timer, problems)
+}
 
-	file, err := os.Open(*csvFilename)
-	if err != nil {
-		exit(fmt.Sprintf("Failed to open the CSV file: %s\n", *csvFilename))
-	}
+func setupQuiz() (*time.Timer, []problem) {
+	csvFilename, timeLimit := parseFlags()
+	file := getFile(csvFilename)
+	lines := getLines(file)
+	problems := parseLines(lines)
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+	return timer, problems
+}
+
+func getLines(file *os.File) [][]string {
 	r := csv.NewReader(file)
 	lines, err := r.ReadAll()
 	if err != nil {
-		exit(fmt.Sprintf("Failed to parse the provided CSV file: %s\n", *csvFilename))
+		exit(fmt.Sprintf("Failed to parse the provided CSV file"))
 	}
-	problems := parseLines(lines)
+	return lines
+}
 
-	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+func getFile(filename *string) *os.File {
+	file, err := os.Open(*filename)
+	if err != nil {
+		exit(fmt.Sprintf("Failed to open the CSV file: %s\n", *filename))
+	}
+	return file
+}
 
+func parseFlags() (*string, *int) {
+	csvFilename := flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
+	timeLimit := flag.Int("limit", 30, "the time limit for the quiz in seconds")
+	flag.Parse()
+	return csvFilename, timeLimit
+}
+
+func runQuiz(timer *time.Timer, problems []problem) {
 	correct := 0
 	for i, p := range problems {
 		fmt.Printf("Problem #%d: %s = ", i+1, p.q)
