@@ -10,34 +10,32 @@ import (
 )
 
 func main() {
-	timer, problems := setupQuiz()
+	csvFilename, timeLimit := parseFlags()
+	file, err := getFile(csvFilename)
+	if err != nil {
+		exit(fmt.Sprintf("Failed to open the CSV file: %s\n", *csvFilename))
+	}
+
+	lines, err := getLines(file)
+	if err != nil {
+		exit(fmt.Sprintf("Failed to parse the provided CSV file: %s\n", *csvFilename))
+	}
+
+	problems := parseLines(lines)
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+
 	runQuiz(timer, problems)
 }
 
-func setupQuiz() (*time.Timer, []problem) {
-	csvFilename, timeLimit := parseFlags()
-	file := getFile(csvFilename)
-	lines := getLines(file)
-	problems := parseLines(lines)
-	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
-	return timer, problems
-}
-
-func getLines(file *os.File) [][]string {
+func getLines(file *os.File) ([][]string, error) {
 	r := csv.NewReader(file)
 	lines, err := r.ReadAll()
-	if err != nil {
-		exit(fmt.Sprintf("Failed to parse the provided CSV file"))
-	}
-	return lines
+	return lines, err
 }
 
-func getFile(filename *string) *os.File {
+func getFile(filename *string) (*os.File, error) {
 	file, err := os.Open(*filename)
-	if err != nil {
-		exit(fmt.Sprintf("Failed to open the CSV file: %s\n", *filename))
-	}
-	return file
+	return file, err
 }
 
 func parseFlags() (*string, *int) {
