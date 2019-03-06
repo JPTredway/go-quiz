@@ -11,7 +11,7 @@ import (
 
 func main() {
 	csvFilename, timeLimit := parseFlags()
-	file, err := getFile(csvFilename)
+	file, err := getFile(*csvFilename)
 	if err != nil {
 		exit(fmt.Sprintf("Failed to open the CSV file: %s\n", *csvFilename))
 	}
@@ -33,8 +33,8 @@ func getLines(file *os.File) ([][]string, error) {
 	return lines, err
 }
 
-func getFile(filename *string) (*os.File, error) {
-	file, err := os.Open(*filename)
+func getFile(filename string) (*os.File, error) {
+	file, err := os.Open(filename)
 	return file, err
 }
 
